@@ -1,6 +1,6 @@
 package chess.pieces;
 
-import java.util.Set;
+import java.util.List;
 
 import chess.GameState;
 import chess.Player;
@@ -21,7 +21,7 @@ public class Knight extends Piece {
     }
 
 	@Override
-	public Set<Position> getMoves(Position origin, GameState gameState) {
+	public List<Position> getMoves(Position origin, GameState gameState) {
 		c = origin.getColumn();
 		r = origin.getRow();
 		

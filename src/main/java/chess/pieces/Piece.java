@@ -1,7 +1,7 @@
 package chess.pieces;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import chess.GameState;
 import chess.Player;
@@ -12,10 +12,10 @@ import chess.Position;
  */
 public abstract class Piece {
     private final Player owner;
-    protected Set<Position> moves = new HashSet<Position>();
-    public char c;
-	public int r;
-	public int quadrant;
+    protected List<Position> moves = new ArrayList<Position>();
+	protected char c;
+	protected int r;
+	private int quadrant;
 	
     protected Piece(Player owner) {
         this.owner = owner;
@@ -34,7 +34,7 @@ public abstract class Piece {
         return owner;
     }
     
-    public abstract Set<Position> getMoves(Position origin, GameState gameState);
+    public abstract List<Position> getMoves(Position origin, GameState gameState);
 
     protected abstract char getIdentifyingCharacter();
     
@@ -51,4 +51,34 @@ public abstract class Piece {
 		r = origin.getRow();
 		quadrant++;
     }
+    
+    public List<Position> getMoves() {
+		return moves;
+	}
+
+	public char getC() {
+		return c;
+	}
+
+	public int getR() {
+		return r;
+	}
+
+	public int getQuadrant() {
+		return quadrant;
+	}
+
+	public void setC(char c) {
+		this.c = c;
+	}
+
+	public void setR(int r) {
+		this.r = r;
+	}
+
+	public void setQuadrant(int quadrant) {
+		this.quadrant = quadrant;
+	}
+	
+	
 }

@@ -1,6 +1,6 @@
 package chess.pieces;
 
-import java.util.Set;
+import java.util.List;
 
 import chess.GameState;
 import chess.Player;
@@ -21,34 +21,36 @@ public class Queen extends Piece{
 	}
 
 	@Override
-	public Set<Position> getMoves(Position origin, GameState gameState) {
-		c = origin.getColumn();
-		r = origin.getRow();
+	public List<Position> getMoves(Position origin, GameState gameState) {
+		setC(origin.getColumn());
+		setR(origin.getRow());
+		setQuadrant(0);
+		
 		Position position = null;
-		while(quadrant < 8){
+		while(getQuadrant() < 8){
 			//Top Right
-			if(quadrant == 0){
+			if(getQuadrant() == 0){
 				c++;r++;}
 			//Top
-			else if(quadrant == 1){
+			else if(getQuadrant() == 1){
 				r++;}
 			//Top Left
-			else if(quadrant == 2){
+			else if(getQuadrant() == 2){
 				c--;r++;}
 			//Right
-			else if(quadrant == 3){
+			else if(getQuadrant() == 3){
 				c++;}
 			//Left
-			else if(quadrant == 4){
+			else if(getQuadrant() == 4){
 				c--;}
 			//Bottom left
-			else if(quadrant == 5){
+			else if(getQuadrant() == 5){
 				c--;r--;}
 			//Bottom
-			else if(quadrant == 6){
+			else if(getQuadrant() == 6){
 				r--;}
 			//Bottom right
-			else if (quadrant == 7){
+			else if (getQuadrant() == 7){
 				c++; r--;}
 
 			position = Validator.createPosition(String.valueOf(c) + String.valueOf(r));

@@ -91,4 +91,16 @@ public class CLITest {
 
         return cli;
     }
+    
+    /**
+     * Test that the CLI can initially accept input
+     */
+    @Test
+    public void testListCommand() throws Exception {
+        runCliWithInput("list");
+
+        List<String> output = captureOutput();
+        assertEquals("Should have 27 output calls", 27, output.size());
+    }
+
 }

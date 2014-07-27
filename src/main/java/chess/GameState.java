@@ -117,15 +117,20 @@ public class GameState {
 	/**
 	 * List all possible moves for current player
 	 */
-
 	public List<String> listAllPossibleMoves(){
 		List<String> moves = new ArrayList<String>();
-
+		legalMoves = new HashMap<Piece, List<Position>>();
+		
 		for(Position p :positionToPieceMap.keySet()){
 			Piece piece = positionToPieceMap.get(p);
 			if(piece.getOwner() == currentPlayer){
-				for(Position move : piece.getMoves(p, this)){
+				List<Position> pieceMoves = piece.getMoves(p, this);
+				if(!pieceMoves.isEmpty())
+					legalMoves.put(piece, new ArrayList<Position>());
+				
+				for(Position move : pieceMoves){
 					moves.add(p.toString() + " " + move.toString());
+					legalMoves.get(piece).add(move);
 				}
 			}
 		}
@@ -133,6 +138,11 @@ public class GameState {
 		return moves;
 	}
 
+	/**
+	 * Pieces that have available moves
+	 */
+	protected Map<Piece, List<Position>> legalMoves;
+	
 	/**
 	 * new
 	 */
