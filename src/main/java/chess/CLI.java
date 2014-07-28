@@ -48,27 +48,29 @@ public class CLI {
 	}
 
 	List<String> moves;
-	
+
 	void startEventLoop() {
 		writeOutput("Type 'help' for a list of commands.");
 		doNewGame();
 
 		while (true) {
 			showBoard();
-			
+
 			moves = gameState.listAllPossibleMoves();
-			gameState.checkMateStatus();
+
 			gameState.checkDrawStatus();
-			
-			if(gameState.checkMate){
-				writeOutput("You Won! CheckMate");
-				return;
-			}
-			else if(gameState.draw){
+			if(gameState.draw){
 				writeOutput("You Won! Draw");
 				return;
+			}else{
+
+				gameState.checkMateStatus();
+				if(gameState.checkMate){
+					writeOutput("You Won! CheckMate");
+					return;
+				}
 			}
-			
+
 			writeOutput(gameState.getCurrentPlayer() + "'s Move");
 			String input = getInput();
 			if (input == null) {
@@ -94,7 +96,7 @@ public class CLI {
 			}
 		}
 	}
-	
+
 	/**
 	 * List command
 	 */
@@ -110,7 +112,7 @@ public class CLI {
 	 */
 	public void move(String piece, String newPosition){
 		String errorMsg = gameState.validateMoveAndPlacePiece(gameState.getPieceAt(piece), Validator.createPosition(newPosition));
-		
+
 		if (!errorMsg.isEmpty()){
 			writeOutput("==x== " + errorMsg + "==x==");
 			writeOutput("==x== Please try again ==x==");
