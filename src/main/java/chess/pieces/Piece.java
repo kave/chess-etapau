@@ -13,6 +13,7 @@ import chess.Position;
 public abstract class Piece {
     private final Player owner;
     protected List<Position> moves = new ArrayList<Position>();
+    protected Position currentPosition;
 	protected char c;
 	protected int r;
 	private int quadrant;
@@ -79,6 +80,12 @@ public abstract class Piece {
 	public void setQuadrant(int quadrant) {
 		this.quadrant = quadrant;
 	}
-	
-	
+
+	public Position getCurrentPosition() {
+		return currentPosition;
+	}
+
+	public void setCurrentPosition(Position currentPosition) {
+		this.currentPosition = currentPosition;
+	}
 }

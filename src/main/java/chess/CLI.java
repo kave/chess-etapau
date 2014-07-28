@@ -47,14 +47,29 @@ public class CLI {
 		}
 	}
 
+	List<String> moves;
+	
 	void startEventLoop() {
 		writeOutput("Type 'help' for a list of commands.");
 		doNewGame();
 
 		while (true) {
 			showBoard();
+			
+			moves = gameState.listAllPossibleMoves();
+			gameState.checkMateStatus();
+			gameState.checkDrawStatus();
+			
+			if(gameState.checkMate){
+				writeOutput("You Won! CheckMate");
+				return;
+			}
+			else if(gameState.draw){
+				writeOutput("You Won! Draw");
+				return;
+			}
+			
 			writeOutput(gameState.getCurrentPlayer() + "'s Move");
-
 			String input = getInput();
 			if (input == null) {
 				break; // No more input possible; this is the only way to exit the event loop
@@ -71,7 +86,8 @@ public class CLI {
 				} else if (input.equals("list")) {
 					list();
 				} else if (input.startsWith("move")) {
-					writeOutput("====> Move Is Not Implemented (yet) <====");
+					String[] args = input.split(" ");
+					move(args[1], args[2]);
 				} else {
 					writeOutput("I didn't understand that.  Type 'help' for a list of commands.");
 				}
@@ -83,8 +99,6 @@ public class CLI {
 	 * List command
 	 */
 	public void list(){
-		List<String> moves = gameState.listAllPossibleMoves();
-		
 		writeOutput("White's Possible Moves: ");
 		for(String move: moves){
 			writeOutput(move);
@@ -92,10 +106,10 @@ public class CLI {
 	}
 
 	/**
-	 * new move command
+	 * Move command
 	 */
 	public void move(String piece, String newPosition){
-		String errorMsg = gameState.validateAndPlacePiece(gameState.getPieceAt(piece), Validator.createPosition(newPosition));
+		String errorMsg = gameState.validateMoveAndPlacePiece(gameState.getPieceAt(piece), Validator.createPosition(newPosition));
 		
 		if (!errorMsg.isEmpty()){
 			writeOutput("==x== " + errorMsg + "==x==");

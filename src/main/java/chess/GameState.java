@@ -25,10 +25,6 @@ public class GameState {
 	 */
 	private Player currentPlayer = Player.White;
 
-	public void setCurrentPlayer(Player currentPlayer) {
-		this.currentPlayer = currentPlayer;
-	}
-
 	/**
 	 * A map of board positions to pieces at that position
 	 */
@@ -41,10 +37,10 @@ public class GameState {
 		positionToPieceMap = new HashMap<Position, Piece>();
 	}
 
-	public Player getCurrentPlayer() {
-		return currentPlayer;
-	}
-
+	public boolean checkMate;
+	
+	public boolean draw;
+	
 	/**
 	 * Call to initialize the game state into the starting positions
 	 */
@@ -106,12 +102,13 @@ public class GameState {
 	}
 
 	/**
-	 * Method to place a piece at a given position
+	 * Method to place a piece at a given position, and save that position to the piece.
 	 * @param piece The piece to place
 	 * @param position The position
 	 */
-	public void placePiece(Piece piece, Position position) {
+	public void placePiece(Piece piece, Position position) {	
 		positionToPieceMap.put(position, piece);
+		positionToPieceMap.get(position).setCurrentPosition(position);
 	}
 
 	/**
@@ -120,18 +117,22 @@ public class GameState {
 	public List<String> listAllPossibleMoves(){
 		List<String> moves = new ArrayList<String>();
 		legalMoves = new HashMap<Piece, List<Position>>();
-		
+
 		for(Position p :positionToPieceMap.keySet()){
 			Piece piece = positionToPieceMap.get(p);
 			if(piece.getOwner() == currentPlayer){
 				List<Position> pieceMoves = piece.getMoves(p, this);
 				if(!pieceMoves.isEmpty())
 					legalMoves.put(piece, new ArrayList<Position>());
-				
+
 				for(Position move : pieceMoves){
 					moves.add(p.toString() + " " + move.toString());
 					legalMoves.get(piece).add(move);
 				}
+			}
+			else{
+				if(piece.getIdentifier() == 'k' || piece.getIdentifier() == 'K')
+					opposingTeamKing = (King) piece;
 			}
 		}
 
@@ -142,23 +143,60 @@ public class GameState {
 	 * Pieces that have available moves
 	 */
 	protected Map<Piece, List<Position>> legalMoves;
-	
-	/**
-	 * new
-	 */
-	public String validateAndPlacePiece(Piece piece, Position position){
-		boolean valid = false;
 
+	public String validateMoveAndPlacePiece(Piece piece, Position position){
 		if(piece == null)
 			return "Piece does not exist at that location";
 		if(position == null)
 			return "New position is out of board boards";
 
-		//must get piece at new location as it will be eaten.
+		for(Position p: legalMoves.get(piece)){
+			if(position.equals(p)){
+				positionToPieceMap.remove(piece.getCurrentPosition());
+				placePiece(piece, position);
+				flipCurrentPlayer();
+				return "";
+			}
+		}
 
-		if(valid)
-			placePiece(piece, position);
+		return "Illegal Move";
+	}
 
-		return "";
+	private void flipCurrentPlayer(){
+		if(currentPlayer == Player.White)
+			setCurrentPlayer(Player.Black);
+		else if(currentPlayer == Player.Black)
+			setCurrentPlayer(Player.White);
+	}
+
+	public Player getCurrentPlayer() {
+		return currentPlayer;
+	}
+	
+	public void setCurrentPlayer(Player currentPlayer) {
+		this.currentPlayer = currentPlayer;
+	}
+
+	private King opposingTeamKing;
+	public void checkMateStatus() {
+		//CheckMate
+		//if(opposing teams king list of moves are all in the the current players list of moves) then check mate
+		if(opposingTeamKing.getMoves().isEmpty())
+			return;
+		
+		for(Position kingMoves: opposingTeamKing.getMoves()){
+			if(legalMoves.keySet().isEmpty())
+				return;
+			for(Piece currentTeamPiece: legalMoves.keySet()){
+				if(!legalMoves.get(currentTeamPiece).contains(kingMoves))
+					return;
+			}
+		}
+		
+		checkMate = true;
+	}
+	
+	//Player is not in check and the only legal moves available to them is from the king. Which puts him in Checkmate
+	public void checkDrawStatus() {
 	}
 }
