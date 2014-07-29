@@ -9,6 +9,10 @@ public class Validator {
     public static final char MAX_COLUMN = 'h';
 
     public static Position createPosition(String colrow){
+    	//Possibly use StringUtils from apache commons to check for null
+    	if(colrow == null || colrow.isEmpty())
+    		return null;
+    	
     	char column = colrow.toCharArray()[0];
 		int row = Character.digit(colrow.toCharArray()[1], 10);
 		

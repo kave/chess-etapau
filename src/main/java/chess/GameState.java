@@ -38,9 +38,9 @@ public class GameState {
 	}
 
 	public boolean checkMate;
-	
+
 	public boolean draw;
-	
+
 	/**
 	 * Call to initialize the game state into the starting positions
 	 */
@@ -88,8 +88,11 @@ public class GameState {
 	 * @return The piece at that position, or null if it does not exist.
 	 */
 	public Piece getPieceAt(String colrow) {
-		Position position = new Position(colrow);
-		return getPieceAt(position);
+		if(!colrow.isEmpty()){
+			Position position = new Position(colrow);
+			return getPieceAt(position);
+		}
+		return null;
 	}
 
 	/**
@@ -116,18 +119,21 @@ public class GameState {
 	 */
 	public List<String> listAllPossibleMoves(){
 		List<String> moves = new ArrayList<String>();
-		legalMoves = new HashMap<Piece, List<Position>>();
+		currentPlayerlegalMoves = new HashMap<Piece, List<Position>>();
 
 		for(Position p :positionToPieceMap.keySet()){
 			Piece piece = positionToPieceMap.get(p);
 			if(piece.getOwner() == currentPlayer){
+				if(piece.getIdentifier() == 'k' || piece.getIdentifier() == 'K')
+					currentTeamKing = (King) piece;
+
 				List<Position> pieceMoves = piece.getMoves(p, this);
 				if(!pieceMoves.isEmpty())
-					legalMoves.put(piece, new ArrayList<Position>());
+					currentPlayerlegalMoves.put(piece, new ArrayList<Position>());
 
 				for(Position move : pieceMoves){
 					moves.add(p.toString() + " " + move.toString());
-					legalMoves.get(piece).add(move);
+					currentPlayerlegalMoves.get(piece).add(move);
 				}
 			}
 			else{
@@ -140,26 +146,38 @@ public class GameState {
 	}
 
 	/**
-	 * Pieces that have available moves
+	 * Current Players available moves
 	 */
-	protected Map<Piece, List<Position>> legalMoves;
+	protected Map<Piece, List<Position>> currentPlayerlegalMoves;
 
 	public String validateMoveAndPlacePiece(Piece piece, Position position){
 		if(piece == null)
 			return "Piece does not exist at that location";
 		if(position == null)
-			return "New position is out of board boards";
+			return "New position is Illegal";
 
-		for(Position p: legalMoves.get(piece)){
-			if(position.equals(p)){
-				positionToPieceMap.remove(piece.getCurrentPosition());
-				placePiece(piece, position);
-				flipCurrentPlayer();
-				return "";
+		if(currentPlayerlegalMoves.containsKey(piece)){
+			for(Position p: currentPlayerlegalMoves.get(piece)){
+				if(position.equals(p)){
+					positionToPieceMap.remove(piece.getCurrentPosition());
+					placePiece(piece, position);
+
+					checkMateStatus();
+					if(checkMate){
+						return "checkMate";
+					}
+
+					flipCurrentPlayer();
+					return "";
+				}
 			}
 		}
 
 		return "Illegal Move";
+	}
+
+	public Map<Piece, List<Position>> getCurrentPlayerlegalMoves() {
+		return currentPlayerlegalMoves;
 	}
 
 	private void flipCurrentPlayer(){
@@ -172,31 +190,100 @@ public class GameState {
 	public Player getCurrentPlayer() {
 		return currentPlayer;
 	}
-	
+
 	public void setCurrentPlayer(Player currentPlayer) {
 		this.currentPlayer = currentPlayer;
 	}
 
 	private King opposingTeamKing;
+
+	//CheckMate
+	//if(opposing teams king list of moves are all in the the current players list of moves) then check mate
 	public void checkMateStatus() {
-		//CheckMate
-		//if(opposing teams king list of moves are all in the the current players list of moves) then check mate
-		if(opposingTeamKing.getMoves().isEmpty())
+
+		//If the King has no moves, then opposing team has no access, thus no check/checkmate
+		if(opposingTeamKing.getMoves(opposingTeamKing.getCurrentPosition(),this).isEmpty())
 			return;
-		
+
+		List<Position> tally = new ArrayList<Position>();
 		for(Position kingMoves: opposingTeamKing.getMoves()){
-			if(legalMoves.keySet().isEmpty())
+			if(currentPlayerlegalMoves.keySet().isEmpty())
 				return;
-			for(Piece currentTeamPiece: legalMoves.keySet()){
-				if(!legalMoves.get(currentTeamPiece).contains(kingMoves))
-					return;
+			for(Piece currentTeamPiece: currentPlayerlegalMoves.keySet()){
+				if(currentPlayerlegalMoves.get(currentTeamPiece).contains(kingMoves)){
+					tally.add(kingMoves);
+					break;
+				}
 			}
 		}
-		
-		checkMate = true;
+
+		populateOpposingTeamMoves();
+		if(tally.size() == opposingTeamKing.getMoves().size()){
+			//Final check to see if opposing team has a chance to save king
+			for(Position kingMoves: opposingTeamKing.getMoves()){
+				for(Piece currentTeamPiece: opposingPlayerlegalMoves.keySet()){
+					if(!opposingPlayerlegalMoves.get(currentTeamPiece).contains(kingMoves))
+						return;
+				}
+			}
+
+			checkMate = true;
+		}
 	}
-	
+
+	/**
+	 * Opposing Players available moves
+	 */
+	protected Map<Piece, List<Position>> opposingPlayerlegalMoves;
+
+	private void populateOpposingTeamMoves(){
+		opposingPlayerlegalMoves = new HashMap<Piece, List<Position>>();
+
+		for(Position p :positionToPieceMap.keySet()){
+			Piece piece = positionToPieceMap.get(p);
+			if(piece.getOwner() != currentPlayer){
+				List<Position> pieceMoves = null;
+				if(piece.getMoves().isEmpty()){
+					pieceMoves = piece.getMoves(p, this);
+				}
+				else{
+					pieceMoves = piece.getMoves();
+				}
+				if(!pieceMoves.isEmpty())
+					opposingPlayerlegalMoves.put(piece, new ArrayList<Position>());
+
+				for(Position move : pieceMoves){
+					if(!opposingPlayerlegalMoves.get(piece).contains(move))
+						opposingPlayerlegalMoves.get(piece).add(move);
+				}
+			}
+		}
+
+	}
+
 	//Player is not in check and the only legal moves available to them is from the king. Which puts him in Checkmate
+	private King currentTeamKing;
+
 	public void checkDrawStatus() {
+		if(currentTeamKing.getMoves().isEmpty())
+			return;
+
+		if(currentPlayerlegalMoves.keySet().size() > 1)
+			return;
+
+		populateOpposingTeamMoves();
+		List<Position> tally = new ArrayList<Position>();
+		for(Position kingMoves: currentTeamKing.getMoves()){
+			if(opposingPlayerlegalMoves.keySet().isEmpty())
+				return;
+			for(Piece currentTeamPiece: opposingPlayerlegalMoves.keySet()){
+				if(!opposingPlayerlegalMoves.get(currentTeamPiece).contains(kingMoves)){
+					tally.add(kingMoves);break;
+				}
+			}
+		}
+
+		if(tally.size() == currentTeamKing.getMoves().size())
+			draw = true;
 	}
 }

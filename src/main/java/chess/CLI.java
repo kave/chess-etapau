@@ -1,11 +1,14 @@
 package chess;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import chess.pieces.Piece;
 
@@ -15,7 +18,7 @@ import chess.pieces.Piece;
 public class CLI {
 	private static final String NEWLINE = System.getProperty("line.separator");
 
-	private final BufferedReader inReader;
+	private BufferedReader inReader;
 	private final PrintStream outStream;
 
 	private GameState gameState = null;
@@ -26,6 +29,9 @@ public class CLI {
 		writeOutput("Welcome to Chess!");
 	}
 
+	public void newCommand(InputStream in){
+		this.inReader = new BufferedReader(new InputStreamReader(in));
+	}
 	/**
 	 * Write the string to the output
 	 * @param str The string to write
@@ -47,9 +53,10 @@ public class CLI {
 		}
 	}
 
-	List<String> moves;
+	private List<String> moves;
+	public boolean automated;
 
-	void startEventLoop() {
+	public String startEventLoop() {
 		writeOutput("Type 'help' for a list of commands.");
 		doNewGame();
 
@@ -61,18 +68,34 @@ public class CLI {
 			gameState.checkDrawStatus();
 			if(gameState.draw){
 				writeOutput("You Won! Draw");
-				return;
-			}else{
-
-				gameState.checkMateStatus();
-				if(gameState.checkMate){
-					writeOutput("You Won! CheckMate");
-					return;
-				}
+				return "You Won! Draw";
 			}
 
 			writeOutput(gameState.getCurrentPlayer() + "'s Move");
-			String input = getInput();
+			String input = null;
+
+			if(automated){
+				Map<Piece, List<Position>> legalMoves = gameState.getCurrentPlayerlegalMoves();
+
+				Random rand = new Random();
+
+				int randomPiece = rand.nextInt((legalMoves.keySet().size() - 0)) + 0;
+
+				int x = 0;
+				for(Piece piece:legalMoves.keySet()){
+					if(x==randomPiece){
+						List<Position> pos = legalMoves.get(piece);
+						int randomPos = rand.nextInt((pos.size() - 0)) + 0;
+						input = "move "+piece.getCurrentPosition().toString()+ " "+ pos.get(randomPos).toString();
+						break;
+					}
+					x++;
+				}
+			}
+			else{
+				input = getInput();
+			}
+
 			if (input == null) {
 				break; // No more input possible; this is the only way to exit the event loop
 			} else if (input.length() > 0) {
@@ -89,12 +112,16 @@ public class CLI {
 					list();
 				} else if (input.startsWith("move")) {
 					String[] args = input.split(" ");
-					move(args[1], args[2]);
+					if(!move(args[1], args[2]).isEmpty()){
+						return "Check Mate";
+					}
 				} else {
 					writeOutput("I didn't understand that.  Type 'help' for a list of commands.");
 				}
 			}
 		}
+		
+		return "";
 	}
 
 	/**
@@ -110,13 +137,20 @@ public class CLI {
 	/**
 	 * Move command
 	 */
-	public void move(String piece, String newPosition){
+	public String move(String piece, String newPosition){
 		String errorMsg = gameState.validateMoveAndPlacePiece(gameState.getPieceAt(piece), Validator.createPosition(newPosition));
+
+		if(errorMsg.equals("checkMate")){
+			writeOutput("You Won! CheckMate");
+			return ("You Won! CheckMate");
+		}
 
 		if (!errorMsg.isEmpty()){
 			writeOutput("==x== " + errorMsg + "==x==");
 			writeOutput("==x== Please try again ==x==");
 		}
+		
+		return "";
 	}
 
 	private void doNewGame() {
@@ -124,8 +158,10 @@ public class CLI {
 		gameState.reset();
 	}
 
-	private void showBoard() {
+	public String showBoard() {
 		writeOutput(getBoardAsString());
+		
+		return getBoardAsString();
 	}
 
 	private void showCommands() {
@@ -185,5 +221,9 @@ public class CLI {
 	public static void main(String[] args) {
 		CLI cli = new CLI(System.in, System.out);
 		cli.startEventLoop();
+	}
+
+	public GameState getGameState() {
+		return gameState;
 	}
 }

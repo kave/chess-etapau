@@ -3,10 +3,13 @@ package chess;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.List;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import chess.pieces.Bishop;
@@ -93,12 +96,11 @@ public class GameStateTest {
 	@Test
 	public void testPawnInitalMovesTest(){
 		// Start the game
-		//state.reset();
-		testBoard();
+		state.reset();
 		state.setCurrentPlayer(Player.Black);
 
-		Pawn pawn = (Pawn) state.getPieceAt("g6");
-		assertEquals(2, pawn.getMoves(new Position("g6"), state).size());
+		Pawn pawn = (Pawn) state.getPieceAt("g7");
+		assertEquals(2, pawn.getMoves(new Position("g7"), state).size());
 	}
 
 	@Test
@@ -188,5 +190,105 @@ public class GameStateTest {
 		assertTrue(moves.get(5).equals(new Position("b6")));
 		assertTrue(moves.get(6).equals(new Position("f4")));
 		assertTrue(moves.get(7).equals(new Position("b4")));
+	}
+
+	@Test
+	public void testNonExistentPieceAndPositionMove(){
+		// Start the game
+		testBoard();
+		state.setCurrentPlayer(Player.White);
+
+		assertEquals("Piece does not exist at that location",state.validateMoveAndPlacePiece(state.getPieceAt("c1"), Validator.createPosition("c4")));
+		assertEquals("Piece does not exist at that location",state.validateMoveAndPlacePiece(state.getPieceAt("asd"), Validator.createPosition("c4")));
+		assertEquals("Piece does not exist at that location",state.validateMoveAndPlacePiece(state.getPieceAt(""), Validator.createPosition("c4")));
+
+
+		assertEquals("New position is Illegal",state.validateMoveAndPlacePiece(state.getPieceAt("b1"), Validator.createPosition("c9")));
+		assertEquals("New position is Illegal",state.validateMoveAndPlacePiece(state.getPieceAt("b1"), Validator.createPosition("asdas")));
+		assertEquals("New position is Illegal",state.validateMoveAndPlacePiece(state.getPieceAt("b1"), Validator.createPosition("")));
+		assertEquals("New position is Illegal",state.validateMoveAndPlacePiece(state.getPieceAt("b1"), Validator.createPosition(null)));
+	}
+
+	@Test
+	public void testLegalMove(){
+		// Start the game
+		testBoard();
+		state.setCurrentPlayer(Player.White);
+		state.listAllPossibleMoves();
+
+		state.validateMoveAndPlacePiece(state.getPieceAt("b1"), Validator.createPosition("c1"));
+		assertNotNull(state.getPieceAt("c1"));
+		assertEquals(state.getPieceAt("c1").getIdentifier(), 'k');
+		assertNull(state.getPieceAt("b1"));
+	}
+
+	public void checkDrawBoardScenario(){
+		state = new GameState();
+		// White Pieces
+		state.placePiece(new King(Player.White), new Position("h1"));
+
+		// Black Pieces
+		state.placePiece(new King(Player.Black), new Position("g8"));
+		state.placePiece(new Queen(Player.Black), new Position("g3"));
+		state.placePiece(new Pawn(Player.Black), new Position("h3"));
+		state.placePiece(new Pawn(Player.Black), new Position("g4"));
+		state.placePiece(new Pawn(Player.Black), new Position("f5"));
+	}
+
+	@Test
+	public void testDrawScenario(){
+		checkDrawBoardScenario();
+
+		state.setCurrentPlayer(Player.White);
+		state.listAllPossibleMoves();
+
+		state.checkDrawStatus();
+		assertTrue(state.draw);
+	}
+
+	@Test
+	public void testDrawFailedScenario(){
+		checkDrawBoardScenario();
+		
+		// White Pieces
+		state.placePiece(new Rook(Player.White), new Position("e1"));
+		
+		state.setCurrentPlayer(Player.White);
+		state.listAllPossibleMoves();
+
+		state.checkDrawStatus();
+		assertFalse(state.draw);
+	}
+	
+	@Ignore
+	@Test
+	public void testCheckMateScenario(){
+		checkDrawBoardScenario();
+
+		state.placePiece(new Rook(Player.Black), new Position("e2"));
+		
+		state.setCurrentPlayer(Player.Black);
+		state.listAllPossibleMoves();
+
+		state.checkDrawStatus();
+		assertFalse(state.draw);
+		
+		assertEquals("checkMate", state.validateMoveAndPlacePiece(state.getPieceAt("e2"), Validator.createPosition("e1")));
+	}
+	
+	@Test
+	public void testCheckMateSaveScenario(){
+		checkDrawBoardScenario();
+		
+		state.placePiece(new Rook(Player.White), new Position("f2"));
+		state.placePiece(new Rook(Player.Black), new Position("e2"));
+		
+		state.setCurrentPlayer(Player.Black);
+		state.listAllPossibleMoves();
+
+		state.checkDrawStatus();
+		assertFalse(state.draw);
+		
+		assertEquals("", state.validateMoveAndPlacePiece(state.getPieceAt("e2"), Validator.createPosition("e1")));
 	}
 }
